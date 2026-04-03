@@ -1,8 +1,11 @@
-// src\api\admin.js
+// src/api/admin.js
 import axiosInstance from './axiosConfig';
 
 export const adminAPI = {
-  // Authentification
+  // ============================================
+  // AUTHENTIFICATION
+  // ============================================
+  
   login: (email, password, deviceName) => 
     axiosInstance.post('/auth/login', { email, password, device_name: deviceName }),
   
@@ -11,8 +14,11 @@ export const adminAPI = {
   
   getMe: () => 
     axiosInstance.get('/auth/me'),
+
+  // ============================================
+  // GESTION DES UTILISATEURS
+  // ============================================
   
-  // Gestion des utilisateurs
   getUsers: (params) => 
     axiosInstance.get('/admin/users', { params }),
   
@@ -22,7 +28,6 @@ export const adminAPI = {
   getDrivers: () => 
     axiosInstance.get('/admin/users/drivers'),
   
-  // NOUVELLE MÉTHODE - Créer un utilisateur (client, chauffeur ou admin)
   createUser: (data) => 
     axiosInstance.post('/admin/users', data),
   
@@ -43,8 +48,11 @@ export const adminAPI = {
   
   deleteUser: (id) => 
     axiosInstance.delete(`/admin/users/${id}`),
+
+  // ============================================
+  // CHAUFFEURS EN ATTENTE
+  // ============================================
   
-  // Chauffeurs en attente
   getPendingDrivers: () => 
     axiosInstance.get('/admin/pending-drivers'),
   
@@ -53,8 +61,11 @@ export const adminAPI = {
   
   rejectDriver: (id, data) => 
     axiosInstance.post(`/admin/pending-drivers/${id}/reject`, data),
+
+  // ============================================
+  // GESTION DES COURSES
+  // ============================================
   
-  // Gestion des courses (VISUALISATION SEULEMENT)
   getRides: (params) => 
     axiosInstance.get('/admin/rides', { params }),
   
@@ -63,8 +74,11 @@ export const adminAPI = {
   
   updateRide: (id, data) => 
     axiosInstance.put(`/admin/rides/${id}`, data),
+
+  // ============================================
+  // STATISTIQUES GLOBALES
+  // ============================================
   
-  // Statistiques
   getOverviewStats: () => 
     axiosInstance.get('/admin/stats/overview'),
   
@@ -77,14 +91,130 @@ export const adminAPI = {
   getDriversStats: () => 
     axiosInstance.get('/admin/stats/drivers'),
   
-  // Statistiques courses
   getRidesDashboardStats: (params) => 
     axiosInstance.get('/admin/rides/stats', { params }),
+
+  // ============================================
+  // PARAMÈTRES
+  // ============================================
   
-  // Paramètres
   getSettings: () => 
     axiosInstance.get('/admin/settings'),
   
   updateTarifs: (data) => 
     axiosInstance.put('/admin/settings/tarifs/update', data),
+
+  // ============================================
+  // GESTION DES MESSAGES DE CONTACT
+  // ============================================
+  
+  /**
+   * Récupérer tous les messages de contact
+   * @param {Object} params - Filtres (status, search, page, per_page)
+   */
+  getContactMessages: (params) => 
+    axiosInstance.get('/admin/contact', { params }),
+  
+  /**
+   * Récupérer les statistiques des messages de contact
+   */
+  getContactStats: () => 
+    axiosInstance.get('/admin/contact/stats'),
+  
+  /**
+   * Récupérer un message de contact spécifique
+   * @param {number} id - ID du message
+   */
+  getContactMessage: (id) => 
+    axiosInstance.get(`/admin/contact/${id}`),
+  
+  /**
+   * Marquer un message comme lu
+   * @param {number} id - ID du message
+   */
+  markContactAsRead: (id) => 
+    axiosInstance.put(`/admin/contact/${id}/read`),
+  
+  /**
+   * Marquer un message comme traité
+   * @param {number} id - ID du message
+   */
+  markContactAsProcessed: (id) => 
+    axiosInstance.put(`/admin/contact/${id}/processed`),
+  
+  /**
+   * Archiver un message
+   * @param {number} id - ID du message
+   */
+  archiveContactMessage: (id) => 
+    axiosInstance.put(`/admin/contact/${id}/archive`),
+  
+  /**
+   * Répondre à un message de contact
+   * @param {number} id - ID du message
+   * @param {Object} data - Contient subject et reply_message
+   */
+  replyToContactMessage: (id, data) => 
+    axiosInstance.post(`/admin/contact/${id}/reply`, data),
+  
+  /**
+   * Supprimer un message de contact
+   * @param {number} id - ID du message
+   */
+  deleteContactMessage: (id) => 
+    axiosInstance.delete(`/admin/contact/${id}`),
+
+  // ============================================
+  // GESTION DES TICKETS SUPPORT
+  // ============================================
+  
+  /**
+   * Récupérer tous les tickets support
+   * @param {Object} params - Filtres (status, user_type, priority, search, page, per_page)
+   */
+  getSupportTickets: (params) => 
+    axiosInstance.get('/admin/support', { params }),
+  
+  /**
+   * Récupérer les statistiques des tickets support
+   */
+  getSupportStats: () => 
+    axiosInstance.get('/admin/support/stats'),
+  
+  /**
+   * Récupérer un ticket support spécifique
+   * @param {number} id - ID du ticket
+   */
+  getSupportTicket: (id) => 
+    axiosInstance.get(`/admin/support/${id}`),
+  
+  /**
+   * Mettre à jour le statut d'un ticket
+   * @param {number} id - ID du ticket
+   * @param {Object} data - Contient status
+   */
+  updateSupportStatus: (id, data) => 
+    axiosInstance.put(`/admin/support/${id}/status`, data),
+  
+  /**
+   * Répondre à un ticket support
+   * @param {number} id - ID du ticket
+   * @param {Object} data - Contient subject et reply_message
+   */
+  replyToSupportTicket: (id, data) => 
+    axiosInstance.post(`/admin/support/${id}/reply`, data),
+  
+  /**
+   * Télécharger la pièce jointe d'un ticket
+   * @param {number} id - ID du ticket
+   */
+  downloadSupportAttachment: (id) => 
+    axiosInstance.get(`/admin/support/${id}/download`, { responseType: 'blob' }),
+  
+  /**
+   * Supprimer un ticket support
+   * @param {number} id - ID du ticket
+   */
+  deleteSupportTicket: (id) => 
+    axiosInstance.delete(`/admin/support/${id}`),
 };

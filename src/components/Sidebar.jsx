@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
+import { FaEnvelope, FaTicketAlt } from "react-icons/fa";
 import {
   FaTachometerAlt,
   FaUsers,
@@ -27,6 +28,8 @@ const Sidebar = () => {
       label: "Chauffeurs en attente",
       badge: 3,
     },
+    { to: "/contact-messages", icon: FaEnvelope, label: "Messages contact" },
+    { to: "/support-tickets", icon: FaTicketAlt, label: "Support tickets" },
     { to: "/rides", icon: FaCar, label: "Courses" },
     { to: "/stats", icon: FaChartBar, label: "Statistiques" },
     { to: "/settings", icon: FaCog, label: "Paramètres" },

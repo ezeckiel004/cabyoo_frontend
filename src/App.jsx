@@ -12,6 +12,9 @@ import Stats from "./pages/Stats";
 import Settings from "./pages/Settings";
 import PendingDrivers from "./pages/PendingDrivers";
 
+import ContactMessages from "./pages/ContactMessages";
+import SupportTickets from "./pages/SupportTickets";
+
 function App() {
   return (
     <AuthProvider>
@@ -78,6 +81,24 @@ function App() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/contact-messages"
+          element={
+            <ProtectedRoute>
+              <ContactMessages />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/support-tickets"
+          element={
+            <ProtectedRoute>
+              <SupportTickets />
             </ProtectedRoute>
           }
         />
