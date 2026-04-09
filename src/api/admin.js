@@ -217,4 +217,64 @@ export const adminAPI = {
    */
   deleteSupportTicket: (id) => 
     axiosInstance.delete(`/admin/support/${id}`),
+
+  // ============================================
+  // GESTION DES INVESTISSEMENTS
+  // ============================================
+  
+  /**
+   * Récupérer toutes les demandes d'investissement
+   * @param {Object} params - Filtres (status, search, date_from, date_to, page, per_page)
+   */
+  getInvestments: (params) => 
+    axiosInstance.get('/admin/investments', { params }),
+  
+  /**
+   * Récupérer les statistiques des investissements
+   */
+  getInvestmentsStats: () => 
+    axiosInstance.get('/admin/investments/stats'),
+  
+  /**
+   * Récupérer une demande d'investissement spécifique
+   * @param {number} id - ID de la demande
+   */
+  getInvestment: (id) => 
+    axiosInstance.get(`/admin/investments/${id}`),
+  
+  /**
+   * Mettre à jour une demande d'investissement
+   * @param {number} id - ID de la demande
+   * @param {Object} data - Contient status et/ou admin_notes
+   */
+  updateInvestment: (id, data) => 
+    axiosInstance.put(`/admin/investments/${id}`, data),
+  
+  /**
+   * Marquer une demande comme contactée
+   * @param {number} id - ID de la demande
+   */
+  markInvestmentContacted: (id) => 
+    axiosInstance.post(`/admin/investments/${id}/contacted`),
+  
+  /**
+   * Archiver une demande d'investissement
+   * @param {number} id - ID de la demande
+   */
+  archiveInvestment: (id) => 
+    axiosInstance.post(`/admin/investments/${id}/archive`),
+  
+  /**
+   * Supprimer une demande d'investissement
+   * @param {number} id - ID de la demande
+   */
+  deleteInvestment: (id) => 
+    axiosInstance.delete(`/admin/investments/${id}`),
+  
+  /**
+   * Exporter les demandes d'investissement en CSV
+   * @param {Object} params - Filtres (status)
+   */
+  exportInvestments: (params) => 
+    axiosInstance.get('/admin/investments/export', { params, responseType: 'blob' }),
 };

@@ -14,6 +14,7 @@ import PendingDrivers from "./pages/PendingDrivers";
 
 import ContactMessages from "./pages/ContactMessages";
 import SupportTickets from "./pages/SupportTickets";
+import Investments from "./pages/Investments";
 
 function App() {
   return (
@@ -99,6 +100,15 @@ function App() {
           element={
             <ProtectedRoute>
               <SupportTickets />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/investments"
+          element={
+            <ProtectedRoute>
+              <Investments />
             </ProtectedRoute>
           }
         />

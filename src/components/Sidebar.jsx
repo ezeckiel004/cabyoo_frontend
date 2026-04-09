@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { FaEnvelope, FaTicketAlt } from "react-icons/fa";
+
 import {
   FaTachometerAlt,
   FaUsers,
@@ -8,6 +9,7 @@ import {
   FaChartBar,
   FaCog,
   FaUserClock,
+  FaMoneyBillWave,
   FaChevronLeft,
   FaChevronRight,
   FaBars,
@@ -31,6 +33,7 @@ const Sidebar = () => {
     { to: "/contact-messages", icon: FaEnvelope, label: "Messages contact" },
     { to: "/support-tickets", icon: FaTicketAlt, label: "Support tickets" },
     { to: "/rides", icon: FaCar, label: "Courses" },
+    { to: "/investments", icon: FaMoneyBillWave, label: "Investissements" },
     { to: "/stats", icon: FaChartBar, label: "Statistiques" },
     { to: "/settings", icon: FaCog, label: "Paramètres" },
   ];
