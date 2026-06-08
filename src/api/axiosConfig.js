@@ -1,8 +1,14 @@
 import axios from 'axios';
 
+// Configuration de l'API
+// baseURL: 'https://api.cabyoo.com/api',
+//export const API_BASE_URL = 'https://api.cabyoo.com'; // Au lieu de 'http://localhost:8000'
+// export const API_BASE_URL = 'http://localhost:8000'; 
+export const API_BASE_URL = 'https://api.cabyoo.com'; 
+export const API_URL = `${API_BASE_URL}/api`;
+
 const axiosInstance = axios.create({
-  baseURL: 'https://api.cabyoo.com/api',
-  // baseURL: 'http://localhost:8000/api',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -35,3 +41,6 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
+
+
+ // baseURL: 'https://api.cabyoo.com/api',

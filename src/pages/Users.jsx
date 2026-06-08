@@ -178,12 +178,13 @@ const UserModal = ({
                       <input
                         type="text"
                         name="name"
-                        value={formData.name}
+                        value={formData.name || ''}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                           formErrors.name ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder="John Doe"
+                        autoComplete="off"
                       />
                       {formErrors.name && (
                         <p className="mt-1 text-sm text-red-600">
@@ -199,7 +200,7 @@ const UserModal = ({
                       <input
                         type="email"
                         name="email"
-                        value={formData.email}
+                        value={formData.email || ''}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                           formErrors.email
@@ -207,6 +208,7 @@ const UserModal = ({
                             : "border-gray-300"
                         }`}
                         placeholder="john@example.com"
+                        autoComplete="off"
                       />
                       {formErrors.email && (
                         <p className="mt-1 text-sm text-red-600">
@@ -222,7 +224,7 @@ const UserModal = ({
                       <input
                         type="tel"
                         name="phone"
-                        value={formData.phone}
+                        value={formData.phone || ''}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                           formErrors.phone
@@ -230,6 +232,7 @@ const UserModal = ({
                             : "border-gray-300"
                         }`}
                         placeholder="+237 6XX XXX XXX"
+                        autoComplete="off"
                       />
                       {formErrors.phone && (
                         <p className="mt-1 text-sm text-red-600">
@@ -250,7 +253,7 @@ const UserModal = ({
                           <input
                             type="password"
                             name="password"
-                            value={formData.password}
+                            value={formData.password || ''}
                             onChange={handleInputChange}
                             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                               formErrors.password
@@ -258,6 +261,7 @@ const UserModal = ({
                                 : "border-gray-300"
                             }`}
                             placeholder="••••••••"
+                            autoComplete="new-password"
                           />
                           <FaKey className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         </div>
@@ -342,7 +346,7 @@ const UserModal = ({
                       </label>
                       <select
                         name="status"
-                        value={formData.status}
+                        value={formData.status || 'active'}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
@@ -370,7 +374,7 @@ const UserModal = ({
                         <input
                           type="text"
                           name="driver_license"
-                          value={formData.driver_license}
+                          value={formData.driver_license || ''}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             formErrors.driver_license
@@ -393,7 +397,7 @@ const UserModal = ({
                         <input
                           type="number"
                           name="year_of_experience"
-                          value={formData.year_of_experience}
+                          value={formData.year_of_experience || 0}
                           onChange={handleInputChange}
                           min="0"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -407,7 +411,7 @@ const UserModal = ({
                         <input
                           type="text"
                           name="car_model"
-                          value={formData.car_model}
+                          value={formData.car_model || ''}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             formErrors.car_model
@@ -430,7 +434,7 @@ const UserModal = ({
                         <input
                           type="text"
                           name="car_plate"
-                          value={formData.car_plate}
+                          value={formData.car_plate || ''}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             formErrors.car_plate
@@ -453,7 +457,7 @@ const UserModal = ({
                         <input
                           type="text"
                           name="car_color"
-                          value={formData.car_color}
+                          value={formData.car_color || ''}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             formErrors.car_color
@@ -521,7 +525,7 @@ const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState("view"); // view, edit, create
+  const [modalType, setModalType] = useState("view");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -564,11 +568,18 @@ const Users = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    let newValue = value;
+    if (type === 'number') {
+      newValue = value === '' ? 0 : parseInt(value) || 0;
+    }
+    
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : newValue,
     }));
-    // Effacer l'erreur pour ce champ s'il y en a une
+    
+    // Effacer l'erreur pour ce champ
     if (formErrors[name]) {
       setFormErrors((prev) => ({ ...prev, [name]: null }));
     }
@@ -576,15 +587,14 @@ const Users = () => {
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.name.trim()) errors.name = "Le nom est requis";
-    if (!formData.email.trim()) {
+    if (!formData.name?.trim()) errors.name = "Le nom est requis";
+    if (!formData.email?.trim()) {
       errors.email = "L'email est requis";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = "Email invalide";
     }
-    if (!formData.phone.trim()) errors.phone = "Le téléphone est requis";
+    if (!formData.phone?.trim()) errors.phone = "Le téléphone est requis";
 
-    // Validation mot de passe uniquement en création
     if (modalType === "create" && !formData.password) {
       errors.password = "Le mot de passe est requis";
     } else if (formData.password && formData.password.length < 6) {
@@ -592,12 +602,12 @@ const Users = () => {
     }
 
     if (formData.role === "chauffeur") {
-      if (!formData.driver_license.trim())
+      if (!formData.driver_license?.trim())
         errors.driver_license = "Le permis est requis";
-      if (!formData.car_model.trim()) errors.car_model = "Le modèle est requis";
-      if (!formData.car_plate.trim())
+      if (!formData.car_model?.trim()) errors.car_model = "Le modèle est requis";
+      if (!formData.car_plate?.trim())
         errors.car_plate = "La plaque est requise";
-      if (!formData.car_color.trim())
+      if (!formData.car_color?.trim())
         errors.car_color = "La couleur est requise";
     }
 
@@ -617,7 +627,6 @@ const Users = () => {
     try {
       setLoading(true);
 
-      // Préparer les données
       const userData = {
         name: formData.name,
         email: formData.email,
@@ -627,24 +636,20 @@ const Users = () => {
         status: formData.status,
       };
 
-      // Ajouter les infos chauffeur si nécessaire
       if (formData.role === "chauffeur") {
         userData.driver_license = formData.driver_license;
         userData.car_model = formData.car_model;
         userData.car_plate = formData.car_plate;
         userData.car_color = formData.car_color;
-        userData.year_of_experience =
-          parseInt(formData.year_of_experience) || 0;
+        userData.year_of_experience = parseInt(formData.year_of_experience) || 0;
+        
+        await adminAPI.createDriver(userData);
+        alert("Chauffeur créé avec succès !");
+      } else {
+        await adminAPI.createUser(userData);
+        alert(`${formData.role === "client" ? "Client" : "Admin"} créé avec succès !`);
       }
 
-      console.log("Données envoyées:", userData);
-
-      // Utiliser la nouvelle API - CORRECTION ICI
-      await adminAPI.createUser(userData);
-
-      alert(
-        `${formData.role === "client" ? "Client" : formData.role === "chauffeur" ? "Chauffeur" : "Admin"} créé avec succès !`,
-      );
       setShowModal(false);
       resetForm();
       fetchUsers();
@@ -661,10 +666,7 @@ const Users = () => {
           });
           alert(errorMessage);
         } else {
-          const errorMsg =
-            errorData.message ||
-            errorData.error ||
-            "Erreur lors de la création";
+          const errorMsg = errorData.message || errorData.error || "Erreur lors de la création";
           alert(`Erreur: ${errorMsg}`);
         }
       } else if (error.request) {

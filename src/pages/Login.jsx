@@ -143,7 +143,7 @@ const Login = () => {
           </div>
 
           {/* Identifiants par défaut dans une carte stylisée */}
-          <div className="mt-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+          {/*<div className="mt-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
             <p className="text-sm font-medium text-gray-700 mb-2">
               🔑 Identifiants de démonstration :
             </p>
@@ -159,10 +159,10 @@ const Login = () => {
                 <span className="text-[#27a421] font-mono">admin123</span>
               </p>
             </div>
-          </div>
+          </div> */}
 
           {/* Lien d'inscription (optionnel) */}
-          <p className="text-center text-gray-600 text-sm">
+         {/* <p className="text-center text-gray-600 text-sm">
             Vous n'avez pas de compte ?{" "}
             <button
               type="button"
@@ -170,7 +170,7 @@ const Login = () => {
             >
               Contacter l'administrateur
             </button>
-          </p>
+          </p> */}
         </form>
       </div>
     </div>

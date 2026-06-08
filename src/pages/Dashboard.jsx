@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import { adminAPI } from "../api/admin";
@@ -13,13 +14,14 @@ import {
   FaCalendar,
   FaExclamationTriangle,
   FaClock,
-  FaCheckCircle,
   FaTimesCircle,
   FaUserClock,
   FaEye,
   FaSync,
   FaMapMarkerAlt,
   FaUser,
+  FaStar,
+  FaChartPie,
 } from "react-icons/fa";
 import {
   LineChart,
@@ -33,9 +35,12 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  BarChart,
+  Bar,
 } from "recharts";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [period, setPeriod] = useState("today");
@@ -57,20 +62,13 @@ const Dashboard = () => {
     try {
       setLoading(true);
 
-      // 1. Récupérer les statistiques globales
       const overviewResponse = await adminAPI.getOverviewStats();
       console.log("Dashboard - Overview stats:", overviewResponse.data);
-      console.log(
-        "Dashboard - Revenue structure:",
-        overviewResponse.data?.revenue,
-      );
       setStats(overviewResponse.data);
 
-      // 2. Récupérer les 5 dernières courses
       const ridesResponse = await adminAPI.getRides({
         limit: 5,
       });
-      console.log("Dashboard - Recent rides response:", ridesResponse);
 
       let recentRides = [];
       if (ridesResponse.data) {
@@ -80,12 +78,21 @@ const Dashboard = () => {
           recentRides = ridesResponse.data;
         }
       }
-      console.log("Dashboard - Processed recent rides:", recentRides);
       setRecentActivities(recentRides);
 
-      // 3. Récupérer les statistiques des courses pour les tendances
-      if (overviewResponse.data?.last_7_days) {
+      if (overviewResponse.data?.last_7_days && overviewResponse.data.last_7_days.length > 0) {
         const trendData = overviewResponse.data.last_7_days.map((day) => ({
+          date: new Date(day.date).toLocaleDateString("fr-FR", {
+            weekday: "short",
+          }),
+          fullDate: day.date,
+          rides: day.rides || 0,
+          estimated_revenue: day.estimated_revenue || 0,
+          completed_revenue: day.completed_revenue || 0,
+        }));
+        setRideTrends(trendData);
+      } else if (overviewResponse.data?.trend_data) {
+        const trendData = overviewResponse.data.trend_data.map((day) => ({
           date: new Date(day.date).toLocaleDateString("fr-FR", {
             weekday: "short",
           }),
@@ -93,24 +100,16 @@ const Dashboard = () => {
           estimated_revenue: day.estimated_revenue || 0,
           completed_revenue: day.completed_revenue || 0,
         }));
-        console.log("Dashboard - Trend data:", trendData);
         setRideTrends(trendData);
       }
 
-      // 4. Récupérer les données pour les alertes
       await fetchAlertsData(overviewResponse.data);
 
-      // 5. Récupérer les top chauffeurs
-      if (overviewResponse.data?.top_drivers) {
-        console.log(
-          "Dashboard - Top drivers:",
-          overviewResponse.data.top_drivers,
-        );
+      if (overviewResponse.data?.top_drivers && overviewResponse.data.top_drivers.length > 0) {
         setTopDrivers(overviewResponse.data.top_drivers);
       } else {
         try {
           const driversStatsResponse = await adminAPI.getDriversStats();
-          console.log("Dashboard - Drivers stats:", driversStatsResponse.data);
           if (driversStatsResponse.data?.most_active_drivers) {
             setTopDrivers(driversStatsResponse.data.most_active_drivers);
           }
@@ -120,14 +119,18 @@ const Dashboard = () => {
         }
       }
 
-      // 6. Récupérer les statistiques de revenus pour les méthodes de paiement
       try {
         const revenueStatsResponse = await adminAPI.getRevenueStats({
           period: "month",
         });
-        console.log("Dashboard - Revenue stats:", revenueStatsResponse.data);
-        if (revenueStatsResponse.data?.payment_methods) {
-          setPaymentMethods(revenueStatsResponse.data.payment_methods);
+        if (revenueStatsResponse.data?.payment_methods && revenueStatsResponse.data.payment_methods.length > 0) {
+          const methods = revenueStatsResponse.data.payment_methods.map((method) => ({
+            name: method.name === 'cash' ? 'Espèces' : 
+                  method.name === 'mobile_money' ? 'Mobile Money' : 
+                  method.name === 'card' ? 'Carte' : method.name,
+            value: method.value || method.total || method.count || 0,
+          }));
+          setPaymentMethods(methods);
         }
       } catch (error) {
         console.warn("Dashboard - Could not fetch revenue stats:", error);
@@ -146,10 +149,6 @@ const Dashboard = () => {
   const fetchAlertsData = async (overviewData) => {
     try {
       const pendingDriversResponse = await adminAPI.getPendingDrivers();
-      console.log(
-        "Dashboard - Pending drivers response:",
-        pendingDriversResponse,
-      );
 
       let pendingDriversCount = 0;
       if (pendingDriversResponse.data) {
@@ -176,10 +175,7 @@ const Dashboard = () => {
         pendingRides: pendingRidesCount,
       });
     } catch (error) {
-      console.error(
-        "Dashboard - Erreur lors du chargement des alertes:",
-        error,
-      );
+      console.error("Dashboard - Erreur lors du chargement des alertes:", error);
     }
   };
 
@@ -211,42 +207,19 @@ const Dashboard = () => {
     );
   };
 
-  const getPaymentBadge = (method) => {
-    const badges = {
-      cash: "bg-gray-100 text-gray-800 border border-gray-200",
-      mobile_money: "bg-green-100 text-green-800 border border-green-200",
-      card: "bg-blue-100 text-blue-800 border border-blue-200",
-    };
-
-    const labels = {
-      cash: "Espèces",
-      mobile_money: "Mobile Money",
-      card: "Carte",
-    };
-
-    return (
-      <span
-        className={`px-2 py-1 rounded text-xs ${badges[method] || "bg-gray-100"}`}
-      >
-        {labels[method] || method}
-      </span>
-    );
-  };
-
   const formatCurrency = (amount) => {
-    if (amount === null || amount === undefined) return "0 XAF";
+    if (amount === null || amount === undefined) return "0 €";
     const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
-    if (isNaN(numAmount)) return "0 XAF";
-    return `${numAmount.toLocaleString("fr-FR")} XAF`;
+    if (isNaN(numAmount)) return "0 €";
+    return `${numAmount.toLocaleString("fr-FR")} €`;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    try {
-      return new Date(dateString).toLocaleDateString("fr-FR");
-    } catch (e) {
-      return "Date invalide";
-    }
+  // ✅ Fonction sécurisée pour formater la note (rating)
+  const formatRating = (rating) => {
+    if (rating === null || rating === undefined) return "0.0";
+    const numRating = typeof rating === "string" ? parseFloat(rating) : rating;
+    if (isNaN(numRating)) return "0.0";
+    return numRating.toFixed(1);
   };
 
   const formatTime = (dateString) => {
@@ -261,8 +234,17 @@ const Dashboard = () => {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString("fr-FR");
+    } catch (e) {
+      return "Date invalide";
+    }
+  };
+
   const handleViewRide = (rideId) => {
-    window.location.href = `/rides/${rideId}`;
+    navigate(`/rides/${rideId}`);
   };
 
   const safeSlice = (array, start, end) => {
@@ -289,6 +271,13 @@ const Dashboard = () => {
     return driver.completed_rides || 0;
   };
 
+  // ✅ Fonction sécurisée pour obtenir la note du chauffeur
+  const getDriverRating = (driver) => {
+    if (typeof driver === "string") return 0;
+    const rating = driver.rating || driver.driver_detail?.rating || 0;
+    return formatRating(rating);
+  };
+
   const getStatCards = () => {
     if (!stats) return [];
 
@@ -297,12 +286,28 @@ const Dashboard = () => {
     let platformRevenue = 0;
     let todayEstimatedRevenue = 0;
     let todayCompletedRevenue = 0;
+    let totalUsers = 0;
+    let totalClients = 0;
+    let totalDrivers = 0;
+    let todayRides = 0;
+    let todayCompleted = 0;
+    let todayCancelled = 0;
+
+    if (stats.users) {
+      totalUsers = stats.users.total || 0;
+      totalClients = stats.users.clients || 0;
+      totalDrivers = stats.users.drivers || 0;
+    }
+
+    if (stats.rides) {
+      todayRides = stats.rides.today || 0;
+      todayCompleted = stats.rides.today_completed || 0;
+      todayCancelled = stats.rides.today_cancelled || 0;
+    }
 
     if (stats.revenue) {
-      estimatedRevenue =
-        stats.revenue.estimated_total || stats.revenue.estimated || 0;
-      completedRevenue =
-        stats.revenue.completed_total || stats.revenue.completed || 0;
+      estimatedRevenue = stats.revenue.estimated_total || 0;
+      completedRevenue = stats.revenue.completed_total || 0;
       platformRevenue = stats.revenue.platform || 0;
       todayEstimatedRevenue = stats.revenue.today_estimated || 0;
       todayCompletedRevenue = stats.revenue.today_completed || 0;
@@ -310,31 +315,28 @@ const Dashboard = () => {
 
     return [
       {
-        title: "Utilisateurs totaux",
-        value: stats.users?.total || 0,
+        title: "Utilisateurs",
+        value: totalUsers.toLocaleString(),
         icon: FaUsers,
         color: "bg-blue-500",
-        change: "+0%",
         trend: "up",
-        description: "Clients et chauffeurs",
-        detail: `${stats.users?.clients || 0} clients, ${stats.users?.drivers || 0} chauffeurs`,
+        description: "Total des utilisateurs",
+        detail: `${totalClients} clients, ${totalDrivers} chauffeurs`,
       },
       {
         title: "Courses aujourd'hui",
-        value: stats.rides?.today || 0,
+        value: todayRides.toLocaleString(),
         icon: FaCar,
         color: "bg-green-500",
-        change: "+0%",
-        trend: "up",
+        trend: todayRides > 0 ? "up" : "down",
         description: "Toutes les courses",
-        detail: `${stats.rides?.today_completed || 0} terminées, ${stats.rides?.today_cancelled || 0} annulées`,
+        detail: `${todayCompleted} terminées, ${todayCancelled} annulées`,
       },
       {
         title: "Revenus estimés",
         value: formatCurrency(estimatedRevenue),
         icon: FaMoneyBillWave,
         color: "bg-purple-500",
-        change: "+0%",
         trend: estimatedRevenue > 0 ? "up" : "down",
         description: "Chiffre d'affaires estimé",
         detail: `Aujourd'hui: ${formatCurrency(todayEstimatedRevenue)}`,
@@ -344,7 +346,6 @@ const Dashboard = () => {
         value: formatCurrency(completedRevenue),
         icon: FaMoneyBillWave,
         color: "bg-indigo-500",
-        change: "+0%",
         trend: completedRevenue > 0 ? "up" : "down",
         description: "Chiffre d'affaires réalisé",
         detail: `Commission: ${formatCurrency(platformRevenue)}`,
@@ -352,20 +353,16 @@ const Dashboard = () => {
     ];
   };
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
   const getPaymentData = () => {
     if (paymentMethods.length > 0) {
-      return paymentMethods.map((method) => ({
-        name: method.name,
-        value: method.value || method.count || 0,
-      }));
+      return paymentMethods;
     }
-
     return [
-      { name: "Espèces", value: 65 },
-      { name: "Mobile Money", value: 30 },
-      { name: "Carte", value: 5 },
+      { name: "Espèces", value: 0 },
+      { name: "Mobile Money", value: 0 },
+      { name: "Carte", value: 0 },
     ];
   };
 
@@ -373,18 +370,18 @@ const Dashboard = () => {
   const paymentData = getPaymentData();
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6">
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6">
           <div className="flex flex-col items-start justify-between mb-6 md:flex-row md:items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">
                 Tableau de bord
               </h1>
               <p className="mt-1 text-gray-600">
-                Aperçu global de l'activité SIMCAR - Mode visualisation
+                Aperçu global de l'activité
               </p>
             </div>
 
@@ -443,9 +440,6 @@ const Dashboard = () => {
                         }`}
                       >
                         {stat.trend === "up" ? <FaArrowUp /> : <FaArrowDown />}
-                        <span className="ml-1 text-sm font-medium">
-                          {stat.change}
-                        </span>
                       </div>
                     </div>
                     <h3 className="mb-1 text-2xl font-bold text-gray-800">
@@ -468,107 +462,103 @@ const Dashboard = () => {
                     <FaChartLine className="w-5 h-5 mr-2 text-blue-600" />
                     Évolution des courses (7 derniers jours)
                   </h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={rideTrends}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis dataKey="date" stroke="#666" />
-                        <YAxis stroke="#666" />
-                        <Tooltip
-                          formatter={(value, name) => {
-                            if (name === "rides")
-                              return [`${value}`, "Nombre de courses"];
-                            if (name === "estimated_revenue")
-                              return [
-                                `${formatCurrency(value)}`,
-                                "Revenus estimés",
-                              ];
-                            if (name === "completed_revenue")
-                              return [
-                                `${formatCurrency(value)}`,
-                                "Revenus réalisés",
-                              ];
-                            return [value, name];
-                          }}
-                          labelFormatter={(label) => `Jour: ${label}`}
-                        />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="rides"
-                          name="Nombre de courses"
-                          stroke="#3b82f6"
-                          strokeWidth={2}
-                          dot={{ r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="estimated_revenue"
-                          name="Revenus estimés"
-                          stroke="#f59e0b"
-                          strokeWidth={2}
-                          dot={{ r: 4 }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="completed_revenue"
-                          name="Revenus réalisés"
-                          stroke="#10b981"
-                          strokeWidth={2}
-                          dot={{ r: 4 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                  <div className="h-80">
+                    {rideTrends && rideTrends.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={rideTrends}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis dataKey="date" stroke="#666" />
+                          <YAxis yAxisId="left" stroke="#666" />
+                          <YAxis yAxisId="right" orientation="right" stroke="#10b981" />
+                          <Tooltip
+                            formatter={(value, name) => {
+                              if (name === "rides") return [`${value}`, "Nombre de courses"];
+                              if (name === "estimated_revenue")
+                                return [`${formatCurrency(value)}`, "Revenus estimés"];
+                              if (name === "completed_revenue")
+                                return [`${formatCurrency(value)}`, "Revenus réalisés"];
+                              return [value, name];
+                            }}
+                            labelFormatter={(label) => `Jour: ${label}`}
+                          />
+                          <Legend />
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="rides"
+                            name="Nombre de courses"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="estimated_revenue"
+                            name="Revenus estimés"
+                            stroke="#f59e0b"
+                            strokeWidth={2}
+                            dot={{ r: 4 }}
+                          />
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="completed_revenue"
+                            name="Revenus réalisés"
+                            stroke="#10b981"
+                            strokeWidth={2}
+                            dot={{ r: 4 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-500">Aucune donnée disponible</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="p-6 bg-white rounded-lg shadow">
                   <h3 className="flex items-center mb-4 text-lg font-semibold text-gray-800">
-                    <FaMoneyBillWave className="w-5 h-5 mr-2 text-green-600" />
+                    <FaChartPie className="w-5 h-5 mr-2 text-green-600" />
                     Répartition des paiements
                   </h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={paymentData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) =>
-                            `${name}: ${(percent * 100).toFixed(0)}%`
-                          }
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {paymentData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value, name, props) => {
-                            const total = paymentData.reduce(
-                              (sum, item) => sum + item.value,
-                              0,
-                            );
-                            const percentage =
-                              total > 0
-                                ? ((value / total) * 100).toFixed(1)
-                                : 0;
-                            return [
-                              `${formatCurrency(value)} (${percentage}%)`,
-                              props.payload.name,
-                            ];
-                          }}
-                        />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div className="h-80">
+                    {paymentData.some(p => p.value > 0) ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={paymentData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={true}
+                            label={({ name, percent }) =>
+                              percent > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ""
+                            }
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {paymentData.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value) => formatCurrency(value)}
+                          />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-500">Aucune donnée de paiement disponible</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -609,7 +599,7 @@ const Dashboard = () => {
                               <div className="text-xs text-gray-500">
                                 {formatTime(ride.created_at)}
                               </div>
-                            </td>
+                             </td>
                             <td className="px-6 py-4">
                               <div className="max-w-xs space-y-1">
                                 <div className="flex items-center text-xs text-gray-600">
@@ -625,10 +615,10 @@ const Dashboard = () => {
                                   </span>
                                 </div>
                               </div>
-                            </td>
+                             </td>
                             <td className="px-6 py-4">
                               {ride.status && getStatusBadge(ride.status)}
-                            </td>
+                             </td>
                             <td className="px-6 py-4 text-sm font-medium">
                               <button
                                 onClick={() => handleViewRide(ride.id)}
@@ -637,8 +627,8 @@ const Dashboard = () => {
                                 <FaEye className="mr-2" />
                                 Voir
                               </button>
-                            </td>
-                          </tr>
+                             </td>
+                           </tr>
                         ))}
                       </tbody>
                     </table>
@@ -651,12 +641,12 @@ const Dashboard = () => {
                   )}
                   {recentActivities.length > 0 && (
                     <div className="px-6 py-3 text-right border-t border-gray-200 bg-gray-50">
-                      <a
-                        href="/rides"
+                      <button
+                        onClick={() => navigate('/rides')}
                         className="text-sm text-blue-600 hover:text-blue-800"
                       >
                         Voir toutes les courses →
-                      </a>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -695,6 +685,13 @@ const Dashboard = () => {
                                   driver.phone ||
                                   "Contact non disponible"}
                               </div>
+                              {/* ✅ Correction ici : utilisation de getDriverRating */}
+                              {driver.rating !== undefined && driver.rating > 0 && (
+                                <div className="flex items-center mt-1 text-xs text-yellow-500">
+                                  <FaStar className="w-3 h-3 mr-1" />
+                                  <span>{getDriverRating(driver)}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="text-right">
@@ -737,6 +734,7 @@ const Dashboard = () => {
                   Alertes et notifications
                 </h3>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  
                   <div
                     className={`border-l-4 border-yellow-500 ${
                       alerts.pendingDrivers > 0 ? "bg-yellow-50" : "bg-gray-50"
@@ -756,12 +754,12 @@ const Dashboard = () => {
                     </div>
                     {alerts.pendingDrivers > 0 && (
                       <div className="mt-3">
-                        <a
-                          href="/pending-drivers"
+                        <button
+                          onClick={() => navigate('/pending-drivers')}
                           className="inline-flex items-center text-sm text-yellow-700 hover:text-yellow-900"
                         >
                           Gérer les inscriptions <FaEye className="ml-2" />
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -785,12 +783,12 @@ const Dashboard = () => {
                     </div>
                     {alerts.cancelledRides > 0 && (
                       <div className="mt-3">
-                        <a
-                          href="/rides?status=cancelled"
+                        <button
+                          onClick={() => navigate('/rides?status=cancelled')}
                           className="inline-flex items-center text-sm text-red-700 hover:text-red-900"
                         >
                           Voir les annulations <FaEye className="ml-2" />
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -814,36 +812,26 @@ const Dashboard = () => {
                     </div>
                     {alerts.pendingRides > 0 && (
                       <div className="mt-3">
-                        <a
-                          href="/rides?status=pending"
+                        <button
+                          onClick={() => navigate('/rides?status=pending')}
                           className="inline-flex items-center text-sm text-blue-700 hover:text-blue-900"
                         >
                           Voir les courses <FaEye className="ml-2" />
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-6 space-y-3">
-                  <div className="p-4 rounded-lg bg-gray-50">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">Note:</span> Ce tableau de
-                      bord est en mode visualisation. Vous pouvez surveiller
-                      l'activité mais les actions sont limitées.
+                {alerts.pendingDrivers > 0 && (
+                  <div className="mt-6 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
+                    <p className="text-sm text-yellow-800">
+                      <span className="font-medium">Action disponible:</span>{" "}
+                      Vous pouvez valider les chauffeurs en attente dans la
+                      section "Chauffeurs en attente".
                     </p>
                   </div>
-
-                  {alerts.pendingDrivers > 0 && (
-                    <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50">
-                      <p className="text-sm text-yellow-800">
-                        <span className="font-medium">Action disponible:</span>{" "}
-                        Vous pouvez valider les chauffeurs en attente dans la
-                        section "Chauffeurs en attente".
-                      </p>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </>
           )}

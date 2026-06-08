@@ -12,8 +12,36 @@ export const adminAPI = {
   logout: () => 
     axiosInstance.post('/auth/logout'),
   
-  getMe: () => 
-    axiosInstance.get('/auth/me'),
+  // Récupérer l'utilisateur connecté
+  getMe: async () => {
+    try {
+      const response = await axiosInstance.get('/auth/me');
+      return response;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return axiosInstance.get('/auth/me');
+      }
+      throw error;
+    }
+  },
+
+  // Mettre à jour le profil
+  updateProfile: (data) => {
+    if (data instanceof FormData) {
+      return axiosInstance.post('/auth/update-profile', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+    return axiosInstance.post('/auth/update-profile', data);
+  },
+  
+  // ✅ NOUVEAU: Supprimer l'avatar
+  deleteAvatar: () => 
+    axiosInstance.delete('/auth/avatar'),
+  
+  // Changer le mot de passe
+  updatePassword: (data) => 
+    axiosInstance.post('/auth/update-password', data),
 
   // ============================================
   // GESTION DES UTILISATEURS
@@ -28,8 +56,12 @@ export const adminAPI = {
   getDrivers: () => 
     axiosInstance.get('/admin/users/drivers'),
   
-  createUser: (data) => 
-    axiosInstance.post('/admin/users', data),
+  createUser: (data) => {
+    if (data.role === 'chauffeur') {
+      return axiosInstance.post('/admin/users/drivers', data);
+    }
+    return axiosInstance.post('/admin/users', data);
+  },
   
   createDriver: (data) => 
     axiosInstance.post('/admin/users/drivers', data),
@@ -79,8 +111,8 @@ export const adminAPI = {
   // STATISTIQUES GLOBALES
   // ============================================
   
-  getOverviewStats: () => 
-    axiosInstance.get('/admin/stats/overview'),
+  getOverviewStats: (params) => 
+    axiosInstance.get('/admin/stats/overview', { params }),
   
   getRevenueStats: (params) => 
     axiosInstance.get('/admin/stats/revenue', { params }),
@@ -101,66 +133,52 @@ export const adminAPI = {
   getSettings: () => 
     axiosInstance.get('/admin/settings'),
   
+  getSettingsByGroup: (group) => 
+    axiosInstance.get(`/admin/settings/${group}`),
+  
+  createSetting: (data) => 
+    axiosInstance.post('/admin/settings', data),
+  
+  updateSetting: (id, data) => 
+    axiosInstance.put(`/admin/settings/${id}`, data),
+  
   updateTarifs: (data) => 
     axiosInstance.put('/admin/settings/tarifs/update', data),
+  
+  updateGeneralSettings: (data) => 
+    axiosInstance.put('/admin/settings/general/update', data),
+  
+  updatePaymentsSettings: (data) => 
+    axiosInstance.put('/admin/settings/payments/update', data),
+  
+  updateNotificationsSettings: (data) => 
+    axiosInstance.put('/admin/settings/notifications/update', data),
 
   // ============================================
   // GESTION DES MESSAGES DE CONTACT
   // ============================================
   
-  /**
-   * Récupérer tous les messages de contact
-   * @param {Object} params - Filtres (status, search, page, per_page)
-   */
   getContactMessages: (params) => 
     axiosInstance.get('/admin/contact', { params }),
   
-  /**
-   * Récupérer les statistiques des messages de contact
-   */
   getContactStats: () => 
     axiosInstance.get('/admin/contact/stats'),
   
-  /**
-   * Récupérer un message de contact spécifique
-   * @param {number} id - ID du message
-   */
   getContactMessage: (id) => 
     axiosInstance.get(`/admin/contact/${id}`),
   
-  /**
-   * Marquer un message comme lu
-   * @param {number} id - ID du message
-   */
   markContactAsRead: (id) => 
     axiosInstance.put(`/admin/contact/${id}/read`),
   
-  /**
-   * Marquer un message comme traité
-   * @param {number} id - ID du message
-   */
   markContactAsProcessed: (id) => 
     axiosInstance.put(`/admin/contact/${id}/processed`),
   
-  /**
-   * Archiver un message
-   * @param {number} id - ID du message
-   */
   archiveContactMessage: (id) => 
     axiosInstance.put(`/admin/contact/${id}/archive`),
   
-  /**
-   * Répondre à un message de contact
-   * @param {number} id - ID du message
-   * @param {Object} data - Contient subject et reply_message
-   */
   replyToContactMessage: (id, data) => 
     axiosInstance.post(`/admin/contact/${id}/reply`, data),
   
-  /**
-   * Supprimer un message de contact
-   * @param {number} id - ID du message
-   */
   deleteContactMessage: (id) => 
     axiosInstance.delete(`/admin/contact/${id}`),
 
@@ -168,53 +186,24 @@ export const adminAPI = {
   // GESTION DES TICKETS SUPPORT
   // ============================================
   
-  /**
-   * Récupérer tous les tickets support
-   * @param {Object} params - Filtres (status, user_type, priority, search, page, per_page)
-   */
   getSupportTickets: (params) => 
     axiosInstance.get('/admin/support', { params }),
   
-  /**
-   * Récupérer les statistiques des tickets support
-   */
   getSupportStats: () => 
     axiosInstance.get('/admin/support/stats'),
   
-  /**
-   * Récupérer un ticket support spécifique
-   * @param {number} id - ID du ticket
-   */
   getSupportTicket: (id) => 
     axiosInstance.get(`/admin/support/${id}`),
   
-  /**
-   * Mettre à jour le statut d'un ticket
-   * @param {number} id - ID du ticket
-   * @param {Object} data - Contient status
-   */
   updateSupportStatus: (id, data) => 
     axiosInstance.put(`/admin/support/${id}/status`, data),
   
-  /**
-   * Répondre à un ticket support
-   * @param {number} id - ID du ticket
-   * @param {Object} data - Contient subject et reply_message
-   */
   replyToSupportTicket: (id, data) => 
     axiosInstance.post(`/admin/support/${id}/reply`, data),
   
-  /**
-   * Télécharger la pièce jointe d'un ticket
-   * @param {number} id - ID du ticket
-   */
   downloadSupportAttachment: (id) => 
     axiosInstance.get(`/admin/support/${id}/download`, { responseType: 'blob' }),
   
-  /**
-   * Supprimer un ticket support
-   * @param {number} id - ID du ticket
-   */
   deleteSupportTicket: (id) => 
     axiosInstance.delete(`/admin/support/${id}`),
 
@@ -222,59 +211,67 @@ export const adminAPI = {
   // GESTION DES INVESTISSEMENTS
   // ============================================
   
-  /**
-   * Récupérer toutes les demandes d'investissement
-   * @param {Object} params - Filtres (status, search, date_from, date_to, page, per_page)
-   */
   getInvestments: (params) => 
     axiosInstance.get('/admin/investments', { params }),
   
-  /**
-   * Récupérer les statistiques des investissements
-   */
   getInvestmentsStats: () => 
     axiosInstance.get('/admin/investments/stats'),
   
-  /**
-   * Récupérer une demande d'investissement spécifique
-   * @param {number} id - ID de la demande
-   */
   getInvestment: (id) => 
     axiosInstance.get(`/admin/investments/${id}`),
   
-  /**
-   * Mettre à jour une demande d'investissement
-   * @param {number} id - ID de la demande
-   * @param {Object} data - Contient status et/ou admin_notes
-   */
   updateInvestment: (id, data) => 
     axiosInstance.put(`/admin/investments/${id}`, data),
   
-  /**
-   * Marquer une demande comme contactée
-   * @param {number} id - ID de la demande
-   */
   markInvestmentContacted: (id) => 
     axiosInstance.post(`/admin/investments/${id}/contacted`),
   
-  /**
-   * Archiver une demande d'investissement
-   * @param {number} id - ID de la demande
-   */
   archiveInvestment: (id) => 
     axiosInstance.post(`/admin/investments/${id}/archive`),
   
-  /**
-   * Supprimer une demande d'investissement
-   * @param {number} id - ID de la demande
-   */
   deleteInvestment: (id) => 
     axiosInstance.delete(`/admin/investments/${id}`),
   
-  /**
-   * Exporter les demandes d'investissement en CSV
-   * @param {Object} params - Filtres (status)
-   */
   exportInvestments: (params) => 
     axiosInstance.get('/admin/investments/export', { params, responseType: 'blob' }),
+
+  // ============================================
+  // GESTION DES ANNONCES PUBLICITAIRES
+  // ============================================
+  
+  getAdvertisements: () => 
+    axiosInstance.get('/admin/advertisements'),
+  
+  getActiveAdvertisements: () => 
+    axiosInstance.get('/advertisements/active'),
+  
+  createAdvertisement: (data) => {
+    if (data instanceof FormData) {
+      return axiosInstance.post('/admin/advertisements', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+    return axiosInstance.post('/admin/advertisements', data);
+  },
+  
+  getAdvertisement: (id) => 
+    axiosInstance.get(`/admin/advertisements/${id}`),
+  
+  updateAdvertisement: (id, data) => {
+    if (data instanceof FormData) {
+      return axiosInstance.post(`/admin/advertisements/${id}?_method=PUT`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+    return axiosInstance.put(`/admin/advertisements/${id}`, data);
+  },
+  
+  deleteAdvertisement: (id) => 
+    axiosInstance.delete(`/admin/advertisements/${id}`),
+  
+  toggleAdvertisementActive: (id) => 
+    axiosInstance.post(`/admin/advertisements/${id}/toggle`),
+  
+  updateAdvertisementsOrder: (advertisements) => 
+    axiosInstance.post('/admin/advertisements/update-order', { advertisements }),
 };

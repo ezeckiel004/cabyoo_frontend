@@ -15,13 +15,15 @@ import PendingDrivers from "./pages/PendingDrivers";
 import ContactMessages from "./pages/ContactMessages";
 import SupportTickets from "./pages/SupportTickets";
 import Investments from "./pages/Investments";
+import Advertisements from "./pages/Advertisements";
+
+import Profile from "./pages/Profile";
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
-
         <Route
           path="/dashboard"
           element={
@@ -30,7 +32,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/users"
           element={
@@ -39,7 +40,15 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        // Ajouter la route dans les routes protégées
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/pending-drivers"
           element={
@@ -48,7 +57,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/rides"
           element={
@@ -57,7 +65,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* NOUVELLE ROUTE POUR LES DÉTAILS D'UNE COURSE */}
         <Route
           path="/rides/:id"
@@ -67,7 +74,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/stats"
           element={
@@ -76,7 +82,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/advertisements"
+          element={
+            <ProtectedRoute>
+              <Advertisements />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/settings"
           element={
@@ -85,7 +98,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/contact-messages"
           element={
@@ -94,7 +106,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/support-tickets"
           element={
@@ -103,7 +114,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/investments"
           element={
@@ -112,7 +122,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route path="/" element={<Navigate to="/dashboard" />} />
       </Routes>
     </AuthProvider>

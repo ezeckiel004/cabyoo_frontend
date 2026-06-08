@@ -1,19 +1,36 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Supprimer les styles par défaut de Vite qui limitent la largeur */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
+html, body, #root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Styles pour le logo (si utilisé) */
 .logo {
   height: 6em;
   padding: 1.5em;
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -39,4 +56,32 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Correction pour que le header prenne toute la largeur */
+header, main, footer {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Correction pour les écrans moyens (tablette) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .container, 
+  .mx-auto {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  header > div,
+  header > div > div {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Force la largeur complète sur tous les éléments */
+body {
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
 }

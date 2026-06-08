@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { FiLogOut, FiBell, FiUser } from "react-icons/fi";
+import { FiLogOut, FiUser } from "react-icons/fi";
+
+const API_BASE_URL = import.meta.env?.VITE_API_URL || "http://localhost:8000";
 
 const Header = () => {
   const { user, logout } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -17,11 +21,58 @@ const Header = () => {
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
+  // Fonction pour obtenir l'URL complète de l'avatar
+  const getAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return null;
+    if (avatarPath.startsWith("http")) return avatarPath;
+    if (avatarPath.startsWith("/storage")) {
+      return `${API_BASE_URL}${avatarPath}`;
+    }
+    if (avatarPath.startsWith("storage")) {
+      return `${API_BASE_URL}/${avatarPath}`;
+    }
+    return `${API_BASE_URL}/storage/${avatarPath}`;
+  };
+
+  // Mettre à jour l'URL de l'avatar quand l'utilisateur change
+  useEffect(() => {
+    if (user?.avatar || user?.profile_picture) {
+      const avatar = user?.avatar || user?.profile_picture;
+      setAvatarUrl(getAvatarUrl(avatar));
+      setImageError(false); // Réinitialiser l'erreur quand une nouvelle photo est chargée
+    } else {
+      setAvatarUrl(null);
+      setImageError(false);
+    }
+  }, [user]);
+
+  // Gérer l'erreur de chargement de l'image
+  const handleImageError = () => {
+    setImageError(true);
+    setAvatarUrl(null);
+  };
+
+  // Récupérer les initiales de l'utilisateur
+  const getUserInitials = () => {
+    if (!user?.name) return "A";
+    return user.name.charAt(0).toUpperCase();
+  };
+
+  // Récupérer le nom complet
+  const getFullName = () => {
+    return user?.name || "Administrateur";
+  };
+
+  // Récupérer l'email
+  const getUserEmail = () => {
+    return user?.email || "admin@cabyoo.com";
+  };
+
   return (
-    <header className="bg-gradient-to-b from-[#150100] to-[#1a2f0a] border-b border-[#27a421]/20 sticky top-0 z-40">
-      <div className="px-4 sm:px-6 mx-auto">
+    <header className="w-full bg-gradient-to-b from-[#150100] to-[#1a2f0a] border-b border-[#27a421]/20 sticky top-0 z-40">
+      <div className="w-full px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Logo agrandi */}
+          {/* Logo */}
           <div className={`flex items-center ${isMobile ? "ml-12" : ""}`}>
             <img
               src="/Cabyoo.jpeg"
@@ -32,30 +83,30 @@ const Header = () => {
 
           {/* Actions et profil */}
           <div className="flex items-center space-x-2 sm:space-x-4">
-            {/* Notifications */}
-            <button className="relative p-2 sm:p-2.5 text-gray-300 hover:text-[#27a421] transition-colors">
-              <FiBell className="w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-
-            {/* Séparateur - caché sur mobile */}
-            <div className="hidden sm:block w-px h-8 bg-[#27a421]/20"></div>
-
             {/* Profil utilisateur - version desktop */}
             {!isMobile && (
               <div className="flex items-center space-x-3">
                 <div className="text-right">
                   <p className="text-sm font-medium text-white">
-                    {user?.name || "Administrateur"}
+                    {getFullName()}
                   </p>
                   <p className="text-xs text-green-300">
-                    {user?.email || "admin@cabyoo.com"}
+                    {getUserEmail()}
                   </p>
                 </div>
 
-                {/* Avatar */}
-                <div className="w-10 h-10 bg-gradient-to-br from-[#27a421] to-[#32bc2b] rounded-full flex items-center justify-center text-white font-semibold text-base shadow-lg">
-                  {user?.name?.charAt(0) || "A"}
+                {/* Avatar avec photo ou placeholder */}
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[#27a421] to-[#32bc2b] flex items-center justify-center text-white font-semibold text-base shadow-lg">
+                  {avatarUrl && !imageError ? (
+                    <img
+                      src={avatarUrl}
+                      alt={getFullName()}
+                      className="w-full h-full object-cover"
+                      onError={handleImageError}
+                    />
+                  ) : (
+                    <span>{getUserInitials()}</span>
+                  )}
                 </div>
 
                 {/* Déconnexion */}
@@ -74,21 +125,44 @@ const Header = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="w-9 h-9 bg-gradient-to-br from-[#27a421] to-[#32bc2b] rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-lg"
+                  className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-[#27a421] to-[#32bc2b] flex items-center justify-center text-white font-semibold text-sm shadow-lg"
                 >
-                  {user?.name?.charAt(0) || "A"}
+                  {avatarUrl && !imageError ? (
+                    <img
+                      src={avatarUrl}
+                      alt={getFullName()}
+                      className="w-full h-full object-cover"
+                      onError={handleImageError}
+                    />
+                  ) : (
+                    <span>{getUserInitials()}</span>
+                  )}
                 </button>
 
                 {/* Menu déroulant mobile */}
                 {isProfileMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-800">
-                        {user?.name || "Administrateur"}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {user?.email || "admin@cabyoo.com"}
-                      </p>
+                    <div className="px-4 py-2 border-b border-gray-100 flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                        {avatarUrl && !imageError ? (
+                          <img
+                            src={avatarUrl}
+                            alt={getFullName()}
+                            className="w-full h-full object-cover"
+                            onError={handleImageError}
+                          />
+                        ) : (
+                          <FiUser className="w-5 h-5 text-gray-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">
+                          {getFullName()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {getUserEmail()}
+                        </p>
+                      </div>
                     </div>
                     <button
                       onClick={() => {

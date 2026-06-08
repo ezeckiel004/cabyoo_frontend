@@ -34,7 +34,7 @@ const Rides = () => {
     cancelled_rides: 0,
   });
   const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all"); // Changé de "today" à "all"
+  const [dateFilter, setDateFilter] = useState("all");
 
   // États pour la pagination
   const [pagination, setPagination] = useState({
@@ -148,7 +148,7 @@ const Rides = () => {
       else if (dateFilter === "week") params.period = "week";
       else if (dateFilter === "month") params.period = "month";
       else if (dateFilter === "year") params.period = "year";
-      else params.period = "all"; // Changé de "today" à "all"
+      else params.period = "all";
 
       const response = await adminAPI.getRidesDashboardStats(params);
       console.log("Stats response:", response.data);
@@ -235,10 +235,10 @@ const Rides = () => {
   };
 
   const formatCurrency = (amount) => {
-    if (amount === null || amount === undefined) return "0 XAF";
+    if (amount === null || amount === undefined) return "0 €";
     const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
-    if (isNaN(numAmount)) return "0 XAF";
-    return `${numAmount.toLocaleString("fr-FR")} XAF`;
+    if (isNaN(numAmount)) return "0 €";
+    return `${numAmount.toLocaleString("fr-FR")} €`;
   };
 
   const handleViewRide = (rideId) => {
@@ -636,7 +636,7 @@ const Rides = () => {
                                 </div>
                               </div>
                             </div>
-                          </td>
+                           </td>
 
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
@@ -654,11 +654,11 @@ const Rides = () => {
                                 {formatCurrency(ride.platform_commission)}
                               </div>
                             )}
-                          </td>
+                           </td>
 
                           <td className="px-6 py-4 whitespace-nowrap">
                             {ride.status && getStatusBadge(ride.status)}
-                          </td>
+                           </td>
 
                           <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                             <button
@@ -668,8 +668,8 @@ const Rides = () => {
                               <FaEye className="mr-2" />
                               Voir détails
                             </button>
-                          </td>
-                        </tr>
+                           </td>
+                         </tr>
                       ))}
                     </tbody>
                   </table>

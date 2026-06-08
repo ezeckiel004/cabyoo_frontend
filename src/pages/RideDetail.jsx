@@ -90,8 +90,8 @@ const RideDetail = () => {
   };
 
   const formatCurrency = (amount) => {
-    if (!amount) return "0 XAF";
-    return `${parseFloat(amount).toLocaleString("fr-FR")} XAF`;
+    if (!amount) return "0 €";
+    return `${parseFloat(amount).toLocaleString("fr-FR")} €`;
   };
 
   const formatDate = (dateString) => {

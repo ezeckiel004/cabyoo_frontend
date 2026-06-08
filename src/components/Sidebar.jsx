@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { FaEnvelope, FaTicketAlt } from "react-icons/fa";
+import { FaUserCircle } from "react-icons/fa"; // Ajouter cet import
+import { FaBullhorn } from "react-icons/fa";
 
 import {
   FaTachometerAlt,
@@ -15,10 +17,47 @@ import {
   FaBars,
 } from "react-icons/fa";
 
+// Importer l'API
+import { adminAPI } from "../api/admin";
+
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [pendingDriversCount, setPendingDriversCount] = useState(0);
+
+  // Récupérer le nombre de chauffeurs en attente
+  const fetchPendingDriversCount = async () => {
+    try {
+      const response = await adminAPI.getPendingDrivers();
+      // La réponse peut être paginée ou avoir une structure spécifique
+      // Ajustez selon la structure réelle de votre API
+      if (response.data && response.data.drivers) {
+        // Si c'est paginé
+        setPendingDriversCount(
+          response.data.drivers.total ||
+            response.data.drivers.data?.length ||
+            0,
+        );
+      } else if (response.data && response.data.data) {
+        // Si c'est une collection directe
+        setPendingDriversCount(response.data.data.length);
+      } else if (Array.isArray(response.data)) {
+        setPendingDriversCount(response.data.length);
+      } else if (response.data && response.data.stats) {
+        // Si vous avez des stats
+        setPendingDriversCount(response.data.stats.total_pending || 0);
+      } else {
+        setPendingDriversCount(response.data.length || 0);
+      }
+    } catch (error) {
+      console.error(
+        "Erreur lors du chargement du nombre de chauffeurs en attente:",
+        error,
+      );
+      setPendingDriversCount(0);
+    }
+  };
 
   // Définition des éléments de navigation
   const navItems = [
@@ -28,13 +67,21 @@ const Sidebar = () => {
       to: "/pending-drivers",
       icon: FaUserClock,
       label: "Chauffeurs en attente",
-      badge: 3,
+      badge: pendingDriversCount, // Dynamique maintenant !
     },
-    { to: "/contact-messages", icon: FaEnvelope, label: "Messages contact" },
+    // { to: "/contact-messages", icon: FaEnvelope, label: "Messages contact" },
     { to: "/support-tickets", icon: FaTicketAlt, label: "Support tickets" },
     { to: "/rides", icon: FaCar, label: "Courses" },
     { to: "/investments", icon: FaMoneyBillWave, label: "Investissements" },
+    { to: "/advertisements", icon: FaBullhorn, label: "Annonces" },
+
     { to: "/stats", icon: FaChartBar, label: "Statistiques" },
+    // Dans navItems, ajoutez :
+    {
+      to: "/profile",
+      icon: FaUserCircle,
+      label: "Mon profil",
+    },
     { to: "/settings", icon: FaCog, label: "Paramètres" },
   ];
 
@@ -49,7 +96,17 @@ const Sidebar = () => {
 
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
+
+    // Charger le nombre de chauffeurs en attente au montage
+    fetchPendingDriversCount();
+
+    // Optionnel: Rafraîchir toutes les 30 secondes
+    const interval = setInterval(fetchPendingDriversCount, 30000);
+
+    return () => {
+      window.removeEventListener("resize", checkScreenSize);
+      clearInterval(interval);
+    };
   }, []);
 
   const toggleSidebar = () => {
@@ -162,22 +219,20 @@ const Sidebar = () => {
                     </span>
                   )}
 
-                  {/* Badge pour les notifications */}
-                  {(!isCollapsed || isMobile) && item.badge && (
-                    <span className="px-2 py-1 text-xs font-bold text-white bg-red-500 rounded-full">
-                      {item.badge}
+                  {/* Badge pour les notifications - Vérifie si > 0 pour l'afficher */}
+                  {(!isCollapsed || isMobile) && item.badge > 0 && (
+                    <span className="px-2 py-1 text-xs font-bold text-white bg-red-500 rounded-full min-w-[20px] text-center">
+                      {item.badge > 99 ? "99+" : item.badge}
                     </span>
                   )}
 
                   {/* Tooltip pour la version réduite sur desktop */}
-                  {isCollapsed && !isMobile && (
+                  {isCollapsed && !isMobile && item.badge > 0 && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
                       {item.label}
-                      {item.badge && (
-                        <span className="ml-2 px-1.5 py-0.5 text-xs bg-red-500 rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
+                      <span className="ml-2 px-1.5 py-0.5 text-xs bg-red-500 rounded-full">
+                        {item.badge > 99 ? "99+" : item.badge}
+                      </span>
                     </div>
                   )}
                 </>
@@ -187,7 +242,7 @@ const Sidebar = () => {
         </nav>
 
         {/* Footer */}
-        {!isMobile && (
+        {/* {!isMobile && (
           <>
             {!isCollapsed ? (
               <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -204,16 +259,16 @@ const Sidebar = () => {
               </div>
             )}
           </>
-        )}
+        )} */}
 
         {/* Footer mobile simplifié */}
-        {isMobile && (
+        {/* {isMobile && (
           <div className="absolute bottom-0 left-0 right-0 p-4">
             <div className="px-4 py-2 bg-white/5 rounded-lg text-center">
               <p className="text-xs text-green-300">Version 2.0.0</p>
             </div>
           </div>
-        )}
+        )} */}
       </aside>
     </>
   );
